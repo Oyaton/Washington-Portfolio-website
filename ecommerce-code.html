@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Platform Code | Oyara Washington</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">OW</div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About Me</a></li>
+                    <li><a href="skills.html">Skills</a></li>
+                    <li><a href="projects.html">Projects</a></li>
+                    <li><a href="contact.html">My Contacts</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="code-section" style="padding-top: 120px; padding-bottom: 80px;">
+            <div class="container">
+                <h1 class="section-title">E-commerce Platform - Source Code</h1>
+
+                <div class="code-content">
+                    <div class="project-info">
+                        <h2>Project Architecture</h2>
+                        <p>This e-commerce platform is built using the MERN stack (MongoDB, Express.js, React.js, Node.js) with modern development practices and secure payment integration.</p>
+
+                        <div class="file-structure">
+                            <h3>File Structure</h3>
+                            <pre class="file-tree">
+ecommerce-platform/
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ProductSearch.js
+│   │   │   ├── ProductCard.js
+│   │   │   ├── Cart.js
+│   │   │   ├── Checkout.js
+│   │   │   └── OrderTracking.js
+│   │   ├── pages/
+│   │   │   ├── Home.js
+│   │   │   ├── Products.js
+│   │   │   ├── Profile.js
+│   │   │   └── Admin.js
+│   │   ├── redux/
+│   │   │   ├── store.js
+│   │   │   └── slices/
+│   │   │       ├── productSlice.js
+│   │   │       ├── cartSlice.js
+│   │   │       ├── userSlice.js
+│   │   │       └── orderSlice.js
+│   │   └── App.js
+│   └── package.json
+├── server/
+│   ├── models/
+│   │   ├── Product.js
+│   │   ├── User.js
+│   │   ├── Order.js
+│   │   └── Cart.js
+│   ├── routes/
+│   │   ├── products.js
+│   │   ├── users.js
+│   │   ├── orders.js
+│   │   ├── cart.js
+│   │   └── payments.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   └── validation.js
+│   └── server.js
+└── package.json
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div class="code-samples">
+                        <h3>Core Feature Implementations</h3>
+
+                        <div class="code-block">
+                            <h4>Product Search & Catalog (client/src/components/ProductSearch.js)</h4>
+                            <pre><code class="language-javascript">import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { searchProducts, setFilters } from '../redux/slices/productSlice';
+
+const ProductSearch = () => {
+  const dispatch = useDispatch();
+  const { products, filters, loading } = useSelector(state => state.products);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  useEffect(() => {
+    dispatch(searchProducts({
+      searchTerm,
+      categories: selectedCategories,
+      priceRange,
+      ...filters
+    }));
+  }, [searchTerm, selectedCategories, priceRange, filters, dispatch]);
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  return (
+    &lt;div className="product-search"&gt;
+      &lt;div className="search-bar"&gt;
+        &lt;input
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) =&gt; setSearchTerm(e.target.value)}
+          className="search-input"
+        /&gt;
+        &lt;button className="search-btn"&gt;
+          &lt;i className="fas fa-search"&gt;&lt;/i&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div className="filters-section"&gt;
+        &lt;div className="filter-group"&gt;
+          &lt;h4&gt;Categories&lt;/h4&gt;
+          {['Electronics', 'Clothing', 'Books', 'Home'].map(category =&gt; (
+            &lt;label key={category} className="filter-checkbox"&gt;
+              &lt;input
+                type="checkbox"
+                checked={selectedCategories.includes(category)}
+                onChange={() =&gt; handleCategoryChange(category)}
+              /&gt;
+              {category}
+            &lt;/label&gt;
+          ))}
+        &lt;/div&gt;
+
+        &lt;div className="filter-group"&gt;
+          &lt;h4&gt;Price Range&lt;/h4&gt;
+          &lt;input
+            type="range"
+            min="0"
+            max="1000"
+            value={priceRange[1]}
+            onChange={(e) =&gt; setPriceRange([0, parseInt(e.target.value)])}
+            className="price-slider"
+          /&gt;
+          &lt;span&gt;$0 - ${priceRange[1]}&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div className="search-results"&gt;
+        {loading ? (
+          &lt;div className="loading"&gt;Loading products...&lt;/div&gt;
+        ) : (
+          &lt;div className="products-grid"&gt;
+            {products.map(product =&gt; (
+              &lt;ProductCard key={product._id} product={product} /&gt;
+            ))}
+          &lt;/div&gt;
+        )}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+};
+
+export default ProductSearch;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Shopping Cart & Checkout (client/src/components/Cart.js)</h4>
+                            <pre><code class="language-javascript">import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateQuantity, removeFromCart, clearCart } from '../redux/slices/cartSlice';
+import { useNavigate } from 'react-router-dom';
+
+const Cart = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { items, total, itemCount } = useSelector(state => state.cart);
+
+  const handleQuantityChange = (productId, newQuantity) => {
+    if (newQuantity === 0) {
+      dispatch(removeFromCart(productId));
+    } else {
+      dispatch(updateQuantity({ productId, quantity: newQuantity }));
+    }
+  };
+
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
+
+  const calculateSubtotal = (price, quantity) => {
+    return (price * quantity).toFixed(2);
+  };
+
+  if (items.length === 0) {
+    return (
+      &lt;div className="cart-empty"&gt;
+        &lt;i className="fas fa-shopping-cart"&gt;&lt;/i&gt;
+        &lt;h3&gt;Your cart is empty&lt;/h3&gt;
+        &lt;p&gt;Add some products to get started!&lt;/p&gt;
+        &lt;button onClick={() =&gt; navigate('/products')} className="btn"&gt;
+          Continue Shopping
+        &lt;/button&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  return (
+    &lt;div className="cart-container"&gt;
+      &lt;div className="cart-header"&gt;
+        &lt;h2&gt;Shopping Cart ({itemCount} items)&lt;/h2&gt;
+        &lt;button onClick={() =&gt; dispatch(clearCart())} className="clear-cart"&gt;
+          Clear Cart
+        &lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;div className="cart-items"&gt;
+        {items.map(item =&gt; (
+          &lt;div key={item.productId} className="cart-item"&gt;
+            &lt;img src={item.image} alt={item.name} className="item-image" /&gt;
+            &lt;div className="item-details"&gt;
+              &lt;h3&gt;{item.name}&lt;/h3&gt;
+              &lt;p className="item-price"&gt;${item.price}&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className="quantity-controls"&gt;
+              &lt;button
+                onClick={() =&gt; handleQuantityChange(item.productId, item.quantity - 1)}
+                className="qty-btn"
+              &gt;
+                -
+              &lt;/button&gt;
+              &lt;span className="quantity"&gt;{item.quantity}&lt;/span&gt;
+              &lt;button
+                onClick={() =&gt; handleQuantityChange(item.productId, item.quantity + 1)}
+                className="qty-btn"
+              &gt;
+                +
+              &lt;/button&gt;
+            &lt;/div&gt;
+            &lt;div className="item-total"&gt;
+              ${calculateSubtotal(item.price, item.quantity)}
+            &lt;/div&gt;
+          &lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+
+      &lt;div className="cart-summary"&gt;
+        &lt;div className="summary-details"&gt;
+          &lt;div className="summary-line"&gt;
+            &lt;span&gt;Subtotal:&lt;/span&gt;
+            &lt;span&gt;${total.toFixed(2)}&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div className="summary-line"&gt;
+            &lt;span&gt;Shipping:&lt;/span&gt;
+            &lt;span&gt;{total &gt; 50 ? 'FREE' : '$9.99'}&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div className="summary-line total"&gt;
+            &lt;span&gt;Total:&lt;/span&gt;
+            &lt;span&gt;${(total + (total &gt; 50 ? 0 : 9.99)).toFixed(2)}&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;button onClick={handleCheckout} className="checkout-btn"&gt;
+          Proceed to Checkout
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+};
+
+export default Cart;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Payment Gateway Integration (server/routes/payments.js)</h4>
+                            <pre><code class="language-javascript">const express = require('express');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const Order = require('../models/Order');
+const auth = require('../middleware/auth');
+
+const router = express.Router();
+
+// Create payment intent
+router.post('/create-payment-intent', auth, async (req, res) => {
+  try {
+    const { amount, currency = 'usd', orderId } = req.body;
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency,
+      metadata: {
+        userId: req.user.id,
+        orderId: orderId
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
+  } catch (error) {
+    console.error('Payment intent creation failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Confirm payment
+router.post('/confirm-payment', auth, async (req, res) => {
+  try {
+    const { paymentIntentId, orderId } = req.body;
+
+    // Retrieve payment intent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status === 'succeeded') {
+      // Update order status
+      const order = await Order.findByIdAndUpdate(
+        orderId,
+        {
+          status: 'paid',
+          paymentIntentId: paymentIntentId,
+          paidAt: new Date()
+        },
+        { new: true }
+      );
+
+      res.json({
+        success: true,
+        order: order,
+        message: 'Payment confirmed successfully'
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Payment not completed'
+      });
+    }
+  } catch (error) {
+    console.error('Payment confirmation failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Handle webhooks from Stripe
+router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.log(`Webhook signature verification failed.`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'payment_intent.succeeded':
+      const paymentIntent = event.data.object;
+      console.log('PaymentIntent was successful!');
+      // Update order status in database
+      break;
+    case 'payment_method.attached':
+      const paymentMethod = event.data.object;
+      console.log('PaymentMethod was attached to a Customer!');
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({received: true});
+});
+
+module.exports = router;</code></pre>
+                        </div>
+
+                        <div class="action-buttons">
+                            <a href="ecommerce-demo.html" class="btn">View Live Demo</a>
+                            <a href="projects.html" class="btn btn-outline">Back to Projects</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="year"></span> Oyara Washington. All rights reserved.</p>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Security Tool - Source Code | Oyara Washington</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <header role="banner">
+        <div class="container">
+            <div class="logo" aria-label="Oyara Washington Logo">OW</div>
+            <nav role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About Me</a></li>
+                    <li><a href="skills.html">Skills</a></li>
+                    <li><a href="projects.html">Projects</a></li>
+                    <li><a href="contact.html">My Contacts</a></li>
+                </ul>
+                <button class="hamburger" aria-label="Toggle mobile menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="code-section" style="padding-top: 120px; padding-bottom: 80px;">
+            <div class="container">
+                <h1 class="section-title">Network Security Tool - Source Code</h1>
+                
+                <div class="code-content">
+                    <div class="project-info">
+                        <h2>Project Architecture</h2>
+                        <p>This network security tool is built using Python with Flask web framework, utilizing powerful security libraries like Nmap and Scapy for network scanning and analysis.</p>
+                        
+                        <div class="file-structure">
+                            <h3>File Structure</h3>
+                            <pre class="file-tree">
+network-security-tool/
+├── app/
+│   ├── __init__.py
+│   ├── models.py
+│   ├── scanner.py
+│   ├── monitor.py
+│   └── reports.py
+├── templates/
+│   ├── dashboard.html
+│   ├── scan_results.html
+│   └── reports.html
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── config/
+│   ├── config.py
+│   └── database.py
+├── utils/
+│   ├── network_utils.py
+│   ├── security_checks.py
+│   └── report_generator.py
+├── requirements.txt
+└── main.py
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div class="code-samples">
+                        <h3>Key Code Snippets</h3>
+                        
+                        <div class="code-block">
+                            <h4>Network Scanner (app/scanner.py)</h4>
+                            <pre><code class="language-python">import nmap
+import socket
+from datetime import datetime
+from app.models import ScanResult
+
+class NetworkScanner:
+    def __init__(self):
+        self.nm = nmap.PortScanner()
+        
+    def scan_network(self, target_range, scan_type='basic'):
+        """
+        Perform network scan on specified range
+        """
+        results = {
+            'hosts': [],
+            'vulnerabilities': [],
+            'scan_time': datetime.now(),
+            'target': target_range
+        }
+        
+        try:
+            if scan_type == 'basic':
+                scan_args = '-sn'  # Ping scan
+            elif scan_type == 'port':
+                scan_args = '-sS -O'  # SYN scan with OS detection
+            elif scan_type == 'vulnerability':
+                scan_args = '--script vuln'  # Vulnerability scan
+            else:
+                scan_args = '-sn'
+                
+            self.nm.scan(target_range, arguments=scan_args)
+            
+            for host in self.nm.all_hosts():
+                host_info = {
+                    'ip': host,
+                    'hostname': self.nm[host].hostname(),
+                    'state': self.nm[host].state(),
+                    'ports': [],
+                    'os': None,
+                    'vulnerabilities': []
+                }
+                
+                # Get port information
+                if 'tcp' in self.nm[host]:
+                    for port in self.nm[host]['tcp']:
+                        port_info = {
+                            'port': port,
+                            'state': self.nm[host]['tcp'][port]['state'],
+                            'service': self.nm[host]['tcp'][port]['name'],
+                            'version': self.nm[host]['tcp'][port].get('version', '')
+                        }
+                        host_info['ports'].append(port_info)
+                
+                # Get OS information
+                if 'osmatch' in self.nm[host]:
+                    if self.nm[host]['osmatch']:
+                        host_info['os'] = self.nm[host]['osmatch'][0]['name']
+                
+                # Check for vulnerabilities
+                if scan_type == 'vulnerability':
+                    host_info['vulnerabilities'] = self.check_vulnerabilities(host)
+                
+                results['hosts'].append(host_info)
+                
+        except Exception as e:
+            print(f"Scan error: {str(e)}")
+            results['error'] = str(e)
+            
+        return results
+    
+    def check_vulnerabilities(self, host):
+        """
+        Check for common vulnerabilities
+        """
+        vulnerabilities = []
+        
+        # Check for open ports that might be vulnerable
+        if 'tcp' in self.nm[host]:
+            for port in self.nm[host]['tcp']:
+                if self.nm[host]['tcp'][port]['state'] == 'open':
+                    service = self.nm[host]['tcp'][port]['name']
+                    
+                    # Check for potentially vulnerable services
+                    if service in ['telnet', 'ftp', 'smtp', 'http']:
+                        vuln = {
+                            'type': 'Insecure Service',
+                            'port': port,
+                            'service': service,
+                            'severity': 'Medium',
+                            'description': f'Potentially insecure service {service} running on port {port}'
+                        }
+                        vulnerabilities.append(vuln)
+        
+        return vulnerabilities</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Threat Detection Engine (app/threat_detector.py)</h4>
+                            <pre><code class="language-python">import numpy as np
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+import joblib
+from datetime import datetime, timedelta
+from app.models import ThreatEvent, NetworkTraffic
+
+class ThreatDetector:
+    def __init__(self):
+        self.anomaly_detector = IsolationForest(
+            contamination=0.1,
+            random_state=42
+        )
+        self.scaler = StandardScaler()
+        self.is_trained = False
+        self.threat_signatures = self.load_threat_signatures()
+
+    def load_threat_signatures(self):
+        """
+        Load known threat signatures and patterns
+        """
+        return {
+            'malware_domains': [
+                'malicious-site.com',
+                'phishing-domain.net',
+                'trojan-host.org'
+            ],
+            'suspicious_ports': [1337, 31337, 12345, 54321],
+            'brute_force_patterns': {
+                'ssh': {'port': 22, 'threshold': 10},
+                'rdp': {'port': 3389, 'threshold': 5},
+                'ftp': {'port': 21, 'threshold': 15}
+            },
+            'malware_signatures': [
+                b'\x4d\x5a\x90\x00',  # PE header
+                b'\x50\x4b\x03\x04',  # ZIP header (potential malware)
+            ]
+        }
+
+    def analyze_traffic_patterns(self, traffic_data):
+        """
+        Analyze network traffic for anomalous patterns
+        """
+        if not traffic_data:
+            return []
+
+        # Extract features for ML analysis
+        features = []
+        for traffic in traffic_data:
+            feature_vector = [
+                traffic.packet_size,
+                traffic.connection_duration,
+                traffic.bytes_sent,
+                traffic.bytes_received,
+                traffic.packet_count,
+                self._port_risk_score(traffic.dst_port),
+                self._time_based_score(traffic.timestamp)
+            ]
+            features.append(feature_vector)
+
+        features = np.array(features)
+
+        # Train model if not already trained
+        if not self.is_trained and len(features) > 100:
+            self._train_anomaly_detector(features)
+
+        # Detect anomalies
+        anomalies = []
+        if self.is_trained:
+            scaled_features = self.scaler.transform(features)
+            anomaly_scores = self.anomaly_detector.decision_function(scaled_features)
+            anomaly_predictions = self.anomaly_detector.predict(scaled_features)
+
+            for i, (traffic, score, prediction) in enumerate(
+                zip(traffic_data, anomaly_scores, anomaly_predictions)
+            ):
+                if prediction == -1:  # Anomaly detected
+                    threat = ThreatEvent(
+                        threat_type='Traffic Anomaly',
+                        severity=self._calculate_severity(score),
+                        source_ip=traffic.src_ip,
+                        destination_ip=traffic.dst_ip,
+                        description=f'Anomalous traffic pattern detected (score: {score:.3f})',
+                        timestamp=datetime.now(),
+                        confidence=abs(score) * 100
+                    )
+                    anomalies.append(threat)
+
+        return anomalies
+
+    def detect_brute_force_attacks(self, connection_logs, time_window=300):
+        """
+        Detect brute force attacks based on connection patterns
+        """
+        threats = []
+        current_time = datetime.now()
+        window_start = current_time - timedelta(seconds=time_window)
+
+        # Group connections by source IP and destination port
+        connection_groups = {}
+        for log in connection_logs:
+            if log.timestamp >= window_start:
+                key = (log.src_ip, log.dst_port)
+                if key not in connection_groups:
+                    connection_groups[key] = []
+                connection_groups[key].append(log)
+
+        # Check for brute force patterns
+        for (src_ip, dst_port), connections in connection_groups.items():
+            failed_attempts = [c for c in connections if not c.success]
+
+            # Check against known brute force patterns
+            for service, pattern in self.threat_signatures['brute_force_patterns'].items():
+                if dst_port == pattern['port'] and len(failed_attempts) >= pattern['threshold']:
+                    threat = ThreatEvent(
+                        threat_type='Brute Force Attack',
+                        severity='HIGH',
+                        source_ip=src_ip,
+                        destination_port=dst_port,
+                        description=f'Brute force attack detected on {service} service',
+                        timestamp=current_time,
+                        confidence=min(95, len(failed_attempts) * 10)
+                    )
+                    threats.append(threat)
+
+        return threats
+
+    def scan_for_malware_signatures(self, file_data):
+        """
+        Scan network traffic for malware signatures
+        """
+        threats = []
+
+        for signature in self.threat_signatures['malware_signatures']:
+            if signature in file_data:
+                threat = ThreatEvent(
+                    threat_type='Malware Detection',
+                    severity='CRITICAL',
+                    description='Malware signature detected in network traffic',
+                    timestamp=datetime.now(),
+                    confidence=90
+                )
+                threats.append(threat)
+
+        return threats
+
+    def check_domain_reputation(self, domain):
+        """
+        Check domain against threat intelligence feeds
+        """
+        if domain in self.threat_signatures['malware_domains']:
+            return {
+                'is_malicious': True,
+                'threat_type': 'Malicious Domain',
+                'severity': 'HIGH',
+                'confidence': 95
+            }
+
+        # Additional checks could include:
+        # - VirusTotal API
+        # - Threat intelligence feeds
+        # - Domain age analysis
+        # - DNS reputation services
+
+        return {
+            'is_malicious': False,
+            'threat_type': None,
+            'severity': 'LOW',
+            'confidence': 0
+        }
+
+    def _train_anomaly_detector(self, features):
+        """
+        Train the anomaly detection model
+        """
+        try:
+            scaled_features = self.scaler.fit_transform(features)
+            self.anomaly_detector.fit(scaled_features)
+            self.is_trained = True
+
+            # Save trained model
+            joblib.dump(self.anomaly_detector, 'models/anomaly_detector.pkl')
+            joblib.dump(self.scaler, 'models/scaler.pkl')
+
+        except Exception as e:
+            print(f"Error training anomaly detector: {e}")
+
+    def _port_risk_score(self, port):
+        """
+        Calculate risk score based on port number
+        """
+        if port in self.threat_signatures['suspicious_ports']:
+            return 10
+        elif port < 1024:  # Well-known ports
+            return 2
+        elif port > 49152:  # Dynamic/private ports
+            return 5
+        else:
+            return 3
+
+    def _time_based_score(self, timestamp):
+        """
+        Calculate risk score based on time patterns
+        """
+        hour = timestamp.hour
+        if 0 <= hour <= 6:  # Late night/early morning
+            return 8
+        elif 9 <= hour <= 17:  # Business hours
+            return 2
+        else:
+            return 5
+
+    def _calculate_severity(self, anomaly_score):
+        """
+        Calculate threat severity based on anomaly score
+        """
+        abs_score = abs(anomaly_score)
+        if abs_score > 0.5:
+            return 'CRITICAL'
+        elif abs_score > 0.3:
+            return 'HIGH'
+        elif abs_score > 0.1:
+            return 'MEDIUM'
+        else:
+            return 'LOW'</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Real-time Traffic Monitor (app/monitor.py)</h4>
+                            <pre><code class="language-python">import threading
+import time
+from scapy.all import sniff, IP, TCP
+from datetime import datetime
+from app.models import SecurityEvent
+
+class SecurityMonitor:
+    def __init__(self):
+        self.monitoring = False
+        self.suspicious_ips = set()
+        self.port_scan_threshold = 10
+        
+    def start_monitoring(self, interface='eth0'):
+        """
+        Start real-time network monitoring
+        """
+        self.monitoring = True
+        monitor_thread = threading.Thread(
+            target=self._monitor_traffic, 
+            args=(interface,)
+        )
+        monitor_thread.daemon = True
+        monitor_thread.start()
+        
+    def stop_monitoring(self):
+        """
+        Stop network monitoring
+        """
+        self.monitoring = False
+        
+    def _monitor_traffic(self, interface):
+        """
+        Monitor network traffic for suspicious activities
+        """
+        def packet_handler(packet):
+            if not self.monitoring:
+                return
+                
+            if IP in packet:
+                self._analyze_packet(packet)
+                
+        sniff(iface=interface, prn=packet_handler, store=0)
+        
+    def _analyze_packet(self, packet):
+        """
+        Analyze individual packets for threats
+        """
+        src_ip = packet[IP].src
+        dst_ip = packet[IP].dst
+        
+        # Detect port scanning
+        if TCP in packet:
+            dst_port = packet[TCP].dport
+            
+            # Check for SYN scan (common port scan technique)
+            if packet[TCP].flags == 2:  # SYN flag
+                self._check_port_scan(src_ip, dst_ip, dst_port)
+                
+        # Check for suspicious IPs
+        if src_ip in self.suspicious_ips:
+            self._log_security_event(
+                'Suspicious Activity',
+                f'Traffic from known suspicious IP: {src_ip}',
+                'High'
+            )
+            
+    def _check_port_scan(self, src_ip, dst_ip, port):
+        """
+        Detect potential port scanning activities
+        """
+        # Simple port scan detection logic
+        current_time = time.time()
+        
+        # In a real implementation, you'd track connection attempts
+        # over time and detect rapid sequential port access
+        
+        # For demo purposes, we'll simulate detection
+        if self._is_rapid_port_access(src_ip, current_time):
+            self._log_security_event(
+                'Port Scan Detected',
+                f'Potential port scan from {src_ip} to {dst_ip}:{port}',
+                'High'
+            )
+            self.suspicious_ips.add(src_ip)
+            
+    def _is_rapid_port_access(self, src_ip, current_time):
+        """
+        Check if IP is making rapid port access attempts
+        """
+        # Simplified logic for demo
+        # In reality, you'd maintain a time-based counter
+        return False  # Placeholder
+        
+    def _log_security_event(self, event_type, description, severity):
+        """
+        Log security events to database
+        """
+        event = SecurityEvent(
+            event_type=event_type,
+            description=description,
+            severity=severity,
+            timestamp=datetime.now(),
+            source_ip=None  # Would extract from packet
+        )
+        
+        # Save to database
+        event.save()
+        
+        print(f"[{severity}] {event_type}: {description}")</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Security Analytics Engine (app/analytics.py)</h4>
+                            <pre><code class="language-python">import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import seaborn as sns
+from app.models import SecurityEvent, NetworkTraffic, VulnerabilityReport
+
+class SecurityAnalytics:
+    def __init__(self):
+        self.threat_weights = {
+            'CRITICAL': 10,
+            'HIGH': 7,
+            'MEDIUM': 4,
+            'LOW': 1
+        }
+
+    def calculate_security_score(self, days=30):
+        """
+        Calculate overall security score based on recent events
+        """
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        # Get security events from the period
+        events = SecurityEvent.get_events_in_range(start_date, end_date)
+        vulnerabilities = VulnerabilityReport.get_active_vulnerabilities()
+
+        # Base score starts at 100
+        base_score = 100
+
+        # Deduct points for security events
+        event_penalty = 0
+        for event in events:
+            weight = self.threat_weights.get(event.severity, 1)
+            event_penalty += weight * (1 - event.confidence / 100)
+
+        # Deduct points for unpatched vulnerabilities
+        vuln_penalty = 0
+        for vuln in vulnerabilities:
+            if vuln.severity == 'CRITICAL':
+                vuln_penalty += 15
+            elif vuln.severity == 'HIGH':
+                vuln_penalty += 10
+            elif vuln.severity == 'MEDIUM':
+                vuln_penalty += 5
+            else:
+                vuln_penalty += 2
+
+        # Calculate final score
+        final_score = max(0, base_score - event_penalty - vuln_penalty)
+
+        return {
+            'score': round(final_score),
+            'grade': self._get_security_grade(final_score),
+            'event_penalty': event_penalty,
+            'vulnerability_penalty': vuln_penalty,
+            'recommendations': self._get_recommendations(final_score, events, vulnerabilities)
+        }
+
+    def generate_threat_trends(self, days=7):
+        """
+        Generate threat trend analysis
+        """
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+
+        # Get daily threat counts
+        daily_threats = {}
+        current_date = start_date
+
+        while current_date <= end_date:
+            day_start = current_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            events = SecurityEvent.get_events_in_range(day_start, day_end)
+
+            daily_threats[current_date.strftime('%Y-%m-%d')] = {
+                'total': len(events),
+                'critical': len([e for e in events if e.severity == 'CRITICAL']),
+                'high': len([e for e in events if e.severity == 'HIGH']),
+                'medium': len([e for e in events if e.severity == 'MEDIUM']),
+                'low': len([e for e in events if e.severity == 'LOW'])
+            }
+
+            current_date += timedelta(days=1)
+
+        return daily_threats
+
+    def analyze_attack_patterns(self):
+        """
+        Analyze common attack patterns and sources
+        """
+        events = SecurityEvent.get_recent_events(limit=1000)
+
+        # Analyze by source IP
+        source_analysis = {}
+        for event in events:
+            if event.source_ip:
+                if event.source_ip not in source_analysis:
+                    source_analysis[event.source_ip] = {
+                        'count': 0,
+                        'threat_types': set(),
+                        'severity_counts': {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
+                    }
+
+                source_analysis[event.source_ip]['count'] += 1
+                source_analysis[event.source_ip]['threat_types'].add(event.threat_type)
+                source_analysis[event.source_ip]['severity_counts'][event.severity] += 1
+
+        # Analyze by threat type
+        threat_type_analysis = {}
+        for event in events:
+            if event.threat_type not in threat_type_analysis:
+                threat_type_analysis[event.threat_type] = {
+                    'count': 0,
+                    'avg_confidence': 0,
+                    'sources': set()
+                }
+
+            threat_type_analysis[event.threat_type]['count'] += 1
+            threat_type_analysis[event.threat_type]['avg_confidence'] += event.confidence
+            if event.source_ip:
+                threat_type_analysis[event.threat_type]['sources'].add(event.source_ip)
+
+        # Calculate averages
+        for threat_type in threat_type_analysis:
+            count = threat_type_analysis[threat_type]['count']
+            threat_type_analysis[threat_type]['avg_confidence'] /= count
+            threat_type_analysis[threat_type]['unique_sources'] = len(
+                threat_type_analysis[threat_type]['sources']
+            )
+            del threat_type_analysis[threat_type]['sources']
+
+        return {
+            'top_sources': sorted(
+                source_analysis.items(),
+                key=lambda x: x[1]['count'],
+                reverse=True
+            )[:10],
+            'threat_types': threat_type_analysis
+        }
+
+    def generate_compliance_report(self, framework='NIST'):
+        """
+        Generate compliance report for security frameworks
+        """
+        if framework == 'NIST':
+            return self._generate_nist_report()
+        elif framework == 'ISO27001':
+            return self._generate_iso27001_report()
+        else:
+            return {'error': 'Unsupported framework'}
+
+    def _generate_nist_report(self):
+        """
+        Generate NIST Cybersecurity Framework compliance report
+        """
+        # NIST CSF Categories
+        categories = {
+            'Identify': {
+                'score': 0,
+                'controls': ['Asset Management', 'Risk Assessment', 'Governance']
+            },
+            'Protect': {
+                'score': 0,
+                'controls': ['Access Control', 'Data Security', 'Protective Technology']
+            },
+            'Detect': {
+                'score': 0,
+                'controls': ['Anomaly Detection', 'Security Monitoring', 'Detection Processes']
+            },
+            'Respond': {
+                'score': 0,
+                'controls': ['Response Planning', 'Communications', 'Analysis']
+            },
+            'Recover': {
+                'score': 0,
+                'controls': ['Recovery Planning', 'Improvements', 'Communications']
+            }
+        }
+
+        # Calculate scores based on implemented controls
+        # This would typically check against actual security controls
+        recent_events = SecurityEvent.get_recent_events(days=30)
+
+        # Detect category score (based on detection capabilities)
+        categories['Detect']['score'] = min(95, 70 + len(recent_events) * 2)
+
+        # Protect category score (based on blocked threats)
+        blocked_threats = [e for e in recent_events if 'blocked' in e.description.lower()]
+        categories['Protect']['score'] = min(90, 60 + len(blocked_threats) * 3)
+
+        # Other categories would be calculated based on actual implementations
+        categories['Identify']['score'] = 85
+        categories['Respond']['score'] = 78
+        categories['Recover']['score'] = 72
+
+        overall_score = sum(cat['score'] for cat in categories.values()) / len(categories)
+
+        return {
+            'framework': 'NIST Cybersecurity Framework',
+            'overall_score': round(overall_score),
+            'categories': categories,
+            'compliance_level': self._get_compliance_level(overall_score),
+            'recommendations': self._get_nist_recommendations(categories)
+        }
+
+    def _get_security_grade(self, score):
+        """
+        Convert security score to letter grade
+        """
+        if score >= 90:
+            return 'A'
+        elif score >= 80:
+            return 'B'
+        elif score >= 70:
+            return 'C'
+        elif score >= 60:
+            return 'D'
+        else:
+            return 'F'
+
+    def _get_compliance_level(self, score):
+        """
+        Get compliance level based on score
+        """
+        if score >= 90:
+            return 'Excellent'
+        elif score >= 80:
+            return 'Good'
+        elif score >= 70:
+            return 'Satisfactory'
+        elif score >= 60:
+            return 'Needs Improvement'
+        else:
+            return 'Poor'
+
+    def _get_recommendations(self, score, events, vulnerabilities):
+        """
+        Generate security recommendations
+        """
+        recommendations = []
+
+        if score < 70:
+            recommendations.append("Immediate security review required")
+
+        critical_vulns = [v for v in vulnerabilities if v.severity == 'CRITICAL']
+        if critical_vulns:
+            recommendations.append(f"Patch {len(critical_vulns)} critical vulnerabilities immediately")
+
+        recent_incidents = [e for e in events if e.severity in ['CRITICAL', 'HIGH']]
+        if len(recent_incidents) > 10:
+            recommendations.append("High number of security incidents - review security controls")
+
+        return recommendations</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Security Report Generator (app/reports.py)</h4>
+                            <pre><code class="language-python">from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from datetime import datetime, timedelta
+import io
+import base64
+
+class SecurityReportGenerator:
+    def __init__(self):
+        self.styles = getSampleStyleSheet()
+        self.title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=self.styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            textColor=colors.darkblue
+        )
+
+    def generate_vulnerability_report(self, scan_results):
+        """
+        Generate comprehensive vulnerability assessment report
+        """
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = []
+
+        # Title
+        title = Paragraph("Network Vulnerability Assessment Report", self.title_style)
+        story.append(title)
+        story.append(Spacer(1, 12))
+
+        # Executive Summary
+        summary_text = f"""
+        <b>Executive Summary</b><br/>
+        This report presents the findings of a comprehensive network vulnerability assessment
+        conducted on {datetime.now().strftime('%B %d, %Y')}. The assessment identified
+        {len(scan_results)} hosts with various security vulnerabilities requiring attention.
+        """
+        story.append(Paragraph(summary_text, self.styles['Normal']))
+        story.append(Spacer(1, 12))
+
+        # Vulnerability Summary Table
+        vuln_data = [['Severity', 'Count', 'Percentage']]
+        severity_counts = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
+
+        for result in scan_results:
+            for vuln in result.get('vulnerabilities', []):
+                severity_counts[vuln['severity']] += 1
+
+        total_vulns = sum(severity_counts.values())
+        for severity, count in severity_counts.items():
+            percentage = (count / total_vulns * 100) if total_vulns > 0 else 0
+            vuln_data.append([severity, str(count), f"{percentage:.1f}%"])
+
+        vuln_table = Table(vuln_data)
+        vuln_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+
+        story.append(vuln_table)
+        story.append(Spacer(1, 20))
+
+        # Detailed Findings
+        story.append(Paragraph("<b>Detailed Findings</b>", self.styles['Heading2']))
+
+        for result in scan_results:
+            host_title = f"Host: {result['ip']} ({result.get('hostname', 'Unknown')})"
+            story.append(Paragraph(host_title, self.styles['Heading3']))
+
+            if result.get('vulnerabilities'):
+                for vuln in result['vulnerabilities']:
+                    vuln_text = f"""
+                    <b>Vulnerability:</b> {vuln['name']}<br/>
+                    <b>Severity:</b> {vuln['severity']}<br/>
+                    <b>Description:</b> {vuln['description']}<br/>
+                    <b>Recommendation:</b> {vuln.get('recommendation', 'Update or patch affected service')}
+                    """
+                    story.append(Paragraph(vuln_text, self.styles['Normal']))
+                    story.append(Spacer(1, 10))
+
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def generate_incident_report(self, incident_data):
+        """
+        Generate security incident response report
+        """
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = []
+
+        # Title
+        title = Paragraph("Security Incident Report", self.title_style)
+        story.append(title)
+        story.append(Spacer(1, 12))
+
+        # Incident Details
+        incident_details = f"""
+        <b>Incident ID:</b> {incident_data.get('id', 'N/A')}<br/>
+        <b>Date/Time:</b> {incident_data.get('timestamp', datetime.now()).strftime('%Y-%m-%d %H:%M:%S')}<br/>
+        <b>Severity:</b> {incident_data.get('severity', 'Unknown')}<br/>
+        <b>Type:</b> {incident_data.get('type', 'Unknown')}<br/>
+        <b>Source:</b> {incident_data.get('source', 'Unknown')}<br/>
+        <b>Status:</b> {incident_data.get('status', 'Open')}
+        """
+        story.append(Paragraph(incident_details, self.styles['Normal']))
+        story.append(Spacer(1, 12))
+
+        # Description
+        story.append(Paragraph("<b>Incident Description</b>", self.styles['Heading2']))
+        description = incident_data.get('description', 'No description available')
+        story.append(Paragraph(description, self.styles['Normal']))
+        story.append(Spacer(1, 12))
+
+        # Timeline
+        if incident_data.get('timeline'):
+            story.append(Paragraph("<b>Incident Timeline</b>", self.styles['Heading2']))
+            timeline_data = [['Time', 'Event', 'Action Taken']]
+
+            for event in incident_data['timeline']:
+                timeline_data.append([
+                    event.get('time', ''),
+                    event.get('event', ''),
+                    event.get('action', '')
+                ])
+
+            timeline_table = Table(timeline_data, colWidths=[1.5*inch, 3*inch, 2.5*inch])
+            timeline_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+
+            story.append(timeline_table)
+
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def generate_executive_dashboard(self, analytics_data):
+        """
+        Generate executive-level security dashboard report
+        """
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = []
+
+        # Title
+        title = Paragraph("Executive Security Dashboard", self.title_style)
+        story.append(title)
+        story.append(Spacer(1, 12))
+
+        # Security Score
+        score_data = analytics_data.get('security_score', {})
+        score_text = f"""
+        <b>Overall Security Score: {score_data.get('score', 'N/A')}/100 (Grade: {score_data.get('grade', 'N/A')})</b><br/>
+        This score represents the overall security posture of your network infrastructure
+        based on recent security events, vulnerability assessments, and compliance metrics.
+        """
+        story.append(Paragraph(score_text, self.styles['Normal']))
+        story.append(Spacer(1, 12))
+
+        # Key Metrics
+        metrics_data = [
+            ['Metric', 'Value', 'Status'],
+            ['Active Threats', str(analytics_data.get('active_threats', 0)), 'Monitor'],
+            ['Critical Vulnerabilities', str(analytics_data.get('critical_vulns', 0)), 'Action Required'],
+            ['Security Events (30 days)', str(analytics_data.get('monthly_events', 0)), 'Normal'],
+            ['Compliance Score', f"{analytics_data.get('compliance_score', 0)}%", 'Good']
+        ]
+
+        metrics_table = Table(metrics_data)
+        metrics_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+
+        story.append(metrics_table)
+        story.append(Spacer(1, 20))
+
+        # Recommendations
+        recommendations = score_data.get('recommendations', [])
+        if recommendations:
+            story.append(Paragraph("<b>Priority Recommendations</b>", self.styles['Heading2']))
+            for i, rec in enumerate(recommendations, 1):
+                story.append(Paragraph(f"{i}. {rec}", self.styles['Normal']))
+                story.append(Spacer(1, 6))
+
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Flask Application (main.py)</h4>
+                            <pre><code class="language-python">from flask import Flask, render_template, request, jsonify
+from app.scanner import NetworkScanner
+from app.monitor import SecurityMonitor
+from app.reports import ReportGenerator
+import json
+
+app = Flask(__name__)
+scanner = NetworkScanner()
+monitor = SecurityMonitor()
+report_gen = ReportGenerator()
+
+@app.route('/')
+def dashboard():
+    """
+    Main dashboard view
+    """
+    # Get recent security events
+    recent_events = SecurityEvent.get_recent(limit=10)
+    
+    # Get network statistics
+    stats = {
+        'active_hosts': get_active_hosts_count(),
+        'vulnerabilities': get_vulnerability_count(),
+        'security_score': calculate_security_score()
+    }
+    
+    return render_template('dashboard.html', 
+                         events=recent_events, 
+                         stats=stats)
+
+@app.route('/scan', methods=['POST'])
+def perform_scan():
+    """
+    Perform network scan
+    """
+    data = request.get_json()
+    target = data.get('target', '192.168.1.0/24')
+    scan_type = data.get('type', 'basic')
+    
+    try:
+        results = scanner.scan_network(target, scan_type)
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/monitor/start', methods=['POST'])
+def start_monitoring():
+    """
+    Start network monitoring
+    """
+    try:
+        monitor.start_monitoring()
+        return jsonify({
+            'success': True,
+            'message': 'Network monitoring started'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/monitor/stop', methods=['POST'])
+def stop_monitoring():
+    """
+    Stop network monitoring
+    """
+    monitor.stop_monitoring()
+    return jsonify({
+        'success': True,
+        'message': 'Network monitoring stopped'
+    })
+
+@app.route('/reports/generate', methods=['POST'])
+def generate_report():
+    """
+    Generate security report
+    """
+    data = request.get_json()
+    report_type = data.get('type', 'summary')
+    
+    try:
+        report = report_gen.generate_report(report_type)
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def get_active_hosts_count():
+    # Implementation to count active hosts
+    return 127
+
+def get_vulnerability_count():
+    # Implementation to count vulnerabilities
+    return 8
+
+def calculate_security_score():
+    # Implementation to calculate security score
+    return 94
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="features-implemented">
+                        <h3>Core Functionalities</h3>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <i class="fas fa-search"></i>
+                                <h4>Network Scanning</h4>
+                                <p>Comprehensive network discovery and port scanning capabilities</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <h4>Threat Detection</h4>
+                                <p>Real-time monitoring and detection of security threats</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-chart-bar"></i>
+                                <h4>Security Analytics</h4>
+                                <p>Advanced analytics and security scoring algorithms</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-file-alt"></i>
+                                <h4>Report Generation</h4>
+                                <p>Automated security reports with actionable recommendations</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="network-security-demo.html" class="btn">View Live Demo</a>
+                        <a href="projects.html" class="btn btn-outline">Back to Projects</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="container">
+            <p>&copy; <span id="year"></span> Oyara Washington. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

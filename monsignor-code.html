@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monsignor Bala SS Website - Source Code | Oyara Washington</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <header role="banner">
+        <div class="container">
+            <div class="logo" aria-label="Oyara Washington Logo">OW</div>
+            <nav role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About Me</a></li>
+                    <li><a href="skills.html">Skills</a></li>
+                    <li><a href="projects.html">Projects</a></li>
+                    <li><a href="contact.html">My Contacts</a></li>
+                </ul>
+                <button class="hamburger" aria-label="Toggle mobile menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="code-section" style="padding-top: 120px; padding-bottom: 80px;">
+            <div class="container">
+                <h1 class="section-title">Monsignor Bala SS Website - Source Code</h1>
+                
+                <div class="code-content">
+                    <div class="project-info">
+                        <h2>Project Architecture</h2>
+                        <p>This school website is built using PHP with a content management approach, MySQL database for dynamic content, and responsive Bootstrap framework for optimal viewing across devices.</p>
+                        
+                        <div class="file-structure">
+                            <h3>File Structure</h3>
+                            <pre class="file-tree">
+monsignor-bala-website/
+├── admin/
+│   ├── dashboard.php
+│   ├── manage-events.php
+│   ├── manage-news.php
+│   └── manage-gallery.php
+├── includes/
+│   ├── header.php
+│   ├── footer.php
+│   ├── navigation.php
+│   └── config.php
+├── pages/
+│   ├── about.php
+│   ├── academics.php
+│   ├── events.php
+│   ├── gallery.php
+│   └── contact.php
+├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── responsive.css
+│   ├── js/
+│   │   ├── main.js
+│   │   └── gallery.js
+│   └── images/
+├── uploads/
+│   ├── events/
+│   ├── gallery/
+│   └── news/
+└── index.php
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div class="code-samples">
+                        <h3>Key Code Snippets</h3>
+                        
+                        <div class="code-block">
+                            <h4>Database Configuration (includes/config.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+// Database configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'monsignor_bala_school');
+
+class Database {
+    private $host = DB_HOST;
+    private $user = DB_USER;
+    private $pass = DB_PASS;
+    private $dbname = DB_NAME;
+    private $dbh;
+    private $error;
+
+    public function __construct() {
+        $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
+        $options = array(
+            PDO::ATTR_PERSISTENT => true,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        );
+
+        try {
+            $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
+        } catch(PDOException $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
+    public function query($query) {
+        $this->stmt = $this->dbh->prepare($query);
+    }
+
+    public function bind($param, $value, $type = null) {
+        if (is_null($type)) {
+            switch (true) {
+                case is_int($value):
+                    $type = PDO::PARAM_INT;
+                    break;
+                case is_bool($value):
+                    $type = PDO::PARAM_BOOL;
+                    break;
+                case is_null($value):
+                    $type = PDO::PARAM_NULL;
+                    break;
+                default:
+                    $type = PDO::PARAM_STR;
+            }
+        }
+        $this->stmt->bindValue($param, $value, $type);
+    }
+
+    public function execute() {
+        return $this->stmt->execute();
+    }
+
+    public function resultset() {
+        $this->execute();
+        return $this->stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+}
+?&gt;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Events Management (pages/events.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+require_once 'includes/config.php';
+
+class EventManager {
+    private $db;
+
+    public function __construct() {
+        $this->db = new Database();
+    }
+
+    public function getUpcomingEvents($limit = 10) {
+        $this->db->query('SELECT * FROM events 
+                         WHERE event_date >= CURDATE() 
+                         ORDER BY event_date ASC 
+                         LIMIT :limit');
+        $this->db->bind(':limit', $limit);
+        return $this->db->resultset();
+    }
+
+    public function getEventById($id) {
+        $this->db->query('SELECT * FROM events WHERE id = :id');
+        $this->db->bind(':id', $id);
+        return $this->db->single();
+    }
+
+    public function addEvent($data) {
+        $this->db->query('INSERT INTO events 
+                         (title, description, event_date, event_time, location, image) 
+                         VALUES 
+                         (:title, :description, :event_date, :event_time, :location, :image)');
+        
+        $this->db->bind(':title', $data['title']);
+        $this->db->bind(':description', $data['description']);
+        $this->db->bind(':event_date', $data['event_date']);
+        $this->db->bind(':event_time', $data['event_time']);
+        $this->db->bind(':location', $data['location']);
+        $this->db->bind(':image', $data['image']);
+
+        return $this->db->execute();
+    }
+}
+
+// Usage in events page
+$eventManager = new EventManager();
+$upcomingEvents = $eventManager->getUpcomingEvents();
+?&gt;
+
+&lt;div class="events-section"&gt;
+    &lt;h2&gt;Upcoming Events&lt;/h2&gt;
+    &lt;div class="events-grid"&gt;
+        &lt;?php foreach($upcomingEvents as $event): ?&gt;
+            &lt;div class="event-card"&gt;
+                &lt;div class="event-date"&gt;
+                    &lt;span class="day"&gt;&lt;?= date('d', strtotime($event-&gt;event_date)) ?&gt;&lt;/span&gt;
+                    &lt;span class="month"&gt;&lt;?= date('M', strtotime($event-&gt;event_date)) ?&gt;&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;div class="event-info"&gt;
+                    &lt;h3&gt;&lt;?= htmlspecialchars($event-&gt;title) ?&gt;&lt;/h3&gt;
+                    &lt;p&gt;&lt;?= htmlspecialchars($event-&gt;description) ?&gt;&lt;/p&gt;
+                    &lt;div class="event-meta"&gt;
+                        &lt;span&gt;&lt;i class="fas fa-clock"&gt;&lt;/i&gt; &lt;?= $event-&gt;event_time ?&gt;&lt;/span&gt;
+                        &lt;span&gt;&lt;i class="fas fa-map-marker-alt"&gt;&lt;/i&gt; &lt;?= $event-&gt;location ?&gt;&lt;/span&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;?php endforeach; ?&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Dynamic Navigation (includes/navigation.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+$current_page = basename($_SERVER['PHP_SELF']);
+
+function isActive($page) {
+    global $current_page;
+    return ($current_page == $page) ? 'active' : '';
+}
+?&gt;
+
+&lt;nav class="navbar navbar-expand-lg navbar-light bg-light"&gt;
+    &lt;div class="container"&gt;
+        &lt;a class="navbar-brand" href="index.php"&gt;
+            &lt;img src="assets/images/logo.png" alt="School Logo" height="50"&gt;
+            &lt;span&gt;Monsignor Bala SS&lt;/span&gt;
+        &lt;/a&gt;
+        
+        &lt;button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#navbarNav"&gt;
+            &lt;span class="navbar-toggler-icon"&gt;&lt;/span&gt;
+        &lt;/button&gt;
+        
+        &lt;div class="collapse navbar-collapse" id="navbarNav"&gt;
+            &lt;ul class="navbar-nav ms-auto"&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('index.php') ?&gt;" href="index.php"&gt;Home&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('about.php') ?&gt;" href="pages/about.php"&gt;About&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('academics.php') ?&gt;" href="pages/academics.php"&gt;Academics&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('events.php') ?&gt;" href="pages/events.php"&gt;Events&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('gallery.php') ?&gt;" href="pages/gallery.php"&gt;Gallery&lt;/a&gt;
+                &lt;/li&gt;
+                &lt;li class="nav-item"&gt;
+                    &lt;a class="nav-link &lt;?= isActive('contact.php') ?&gt;" href="pages/contact.php"&gt;Contact&lt;/a&gt;
+                &lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/nav&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="features-implemented">
+                        <h3>Core Functionalities</h3>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <i class="fas fa-cog"></i>
+                                <h4>Content Management</h4>
+                                <p>Admin panel for managing events, news, and gallery content</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <h4>Event System</h4>
+                                <p>Dynamic event management with date-based filtering</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-images"></i>
+                                <h4>Gallery Management</h4>
+                                <p>Photo upload and categorization system</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-mobile-alt"></i>
+                                <h4>Responsive Design</h4>
+                                <p>Mobile-first responsive design with Bootstrap framework</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="monsignor-demo.html" class="btn">View Live Demo</a>
+                        <a href="projects.html" class="btn btn-outline">Back to Projects</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="container">
+            <p>&copy; <span id="year"></span> Oyara Washington. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

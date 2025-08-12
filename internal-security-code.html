@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Security System - Source Code | Oyara Washington</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <header role="banner">
+        <div class="container">
+            <div class="logo" aria-label="Oyara Washington Logo">OW</div>
+            <nav role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About Me</a></li>
+                    <li><a href="skills.html">Skills</a></li>
+                    <li><a href="projects.html">Projects</a></li>
+                    <li><a href="contact.html">My Contacts</a></li>
+                </ul>
+                <button class="hamburger" aria-label="Toggle mobile menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="code-section" style="padding-top: 120px; padding-bottom: 80px;">
+            <div class="container">
+                <h1 class="section-title">Internal Security System - Source Code</h1>
+                
+                <div class="code-content">
+                    <div class="project-info">
+                        <h2>Project Architecture</h2>
+                        <p>This internal security management system is built using PHP with MVC architecture, MySQL database, and Bootstrap frontend framework.</p>
+                        
+                        <div class="file-structure">
+                            <h3>File Structure</h3>
+                            <pre class="file-tree">
+internal-security-system/
+├── config/
+│   ├── database.php
+│   ├── config.php
+│   └── session.php
+├── models/
+│   ├── SecurityOfficer.php
+│   ├── Visitor.php
+│   ├── Schedule.php
+│   └── DutyAssignment.php
+├── controllers/
+│   ├── DashboardController.php
+│   ├── OfficerController.php
+│   ├── VisitorController.php
+│   └── ScheduleController.php
+├── views/
+│   ├── dashboard/
+│   ├── officers/
+│   ├── visitors/
+│   └── schedules/
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── includes/
+│   ├── header.php
+│   ├── sidebar.php
+│   └── footer.php
+└── index.php
+                            </pre>
+                        </div>
+                    </div>
+
+                    <div class="code-samples">
+                        <h3>Key Code Snippets</h3>
+                        
+                        <div class="code-block">
+                            <h4>Database Configuration (config/database.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+class Database {
+    private $host = "localhost";
+    private $db_name = "security_management";
+    private $username = "root";
+    private $password = "";
+    public $conn;
+
+    public function getConnection() {
+        $this->conn = null;
+        try {
+            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, 
+                                $this->username, $this->password);
+            $this->conn->exec("set names utf8");
+            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch(PDOException $exception) {
+            echo "Connection error: " . $exception->getMessage();
+        }
+        return $this->conn;
+    }
+}
+?&gt;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Visitor Model (models/Visitor.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+class Visitor {
+    private $conn;
+    private $table_name = "visitors";
+
+    public $id;
+    public $visitor_name;
+    public $visitor_phone;
+    public $visitor_email;
+    public $purpose;
+    public $host_name;
+    public $entry_time;
+    public $exit_time;
+    public $status;
+    public $created_at;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function checkIn() {
+        $query = "INSERT INTO " . $this->table_name . " 
+                  SET visitor_name=:visitor_name, visitor_phone=:visitor_phone, 
+                      visitor_email=:visitor_email, purpose=:purpose, 
+                      host_name=:host_name, entry_time=:entry_time, 
+                      status='IN', created_at=NOW()";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(":visitor_name", $this->visitor_name);
+        $stmt->bindParam(":visitor_phone", $this->visitor_phone);
+        $stmt->bindParam(":visitor_email", $this->visitor_email);
+        $stmt->bindParam(":purpose", $this->purpose);
+        $stmt->bindParam(":host_name", $this->host_name);
+        $stmt->bindParam(":entry_time", $this->entry_time);
+
+        return $stmt->execute();
+    }
+
+    public function checkOut($visitor_id) {
+        $query = "UPDATE " . $this->table_name . " 
+                  SET exit_time=NOW(), status='OUT' 
+                  WHERE id=:id AND status='IN'";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $visitor_id);
+
+        return $stmt->execute();
+    }
+
+    public function getTodaysVisitors() {
+        $query = "SELECT * FROM " . $this->table_name . " 
+                  WHERE DATE(created_at) = CURDATE() 
+                  ORDER BY entry_time DESC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+}
+?&gt;</code></pre>
+                        </div>
+
+                        <div class="code-block">
+                            <h4>Security Officer Model (models/SecurityOfficer.php)</h4>
+                            <pre><code class="language-php">&lt;?php
+class SecurityOfficer {
+    private $conn;
+    private $table_name = "security_officers";
+
+    public $id;
+    public $officer_id;
+    public $first_name;
+    public $last_name;
+    public $phone;
+    public $email;
+    public $shift_type;
+    public $status;
+    public $hire_date;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function create() {
+        $query = "INSERT INTO " . $this->table_name . " 
+                  SET officer_id=:officer_id, first_name=:first_name, 
+                      last_name=:last_name, phone=:phone, email=:email, 
+                      shift_type=:shift_type, status=:status, 
+                      hire_date=:hire_date, created_at=NOW()";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(":officer_id", $this->officer_id);
+        $stmt->bindParam(":first_name", $this->first_name);
+        $stmt->bindParam(":last_name", $this->last_name);
+        $stmt->bindParam(":phone", $this->phone);
+        $stmt->bindParam(":email", $this->email);
+        $stmt->bindParam(":shift_type", $this->shift_type);
+        $stmt->bindParam(":status", $this->status);
+        $stmt->bindParam(":hire_date", $this->hire_date);
+
+        return $stmt->execute();
+    }
+
+    public function getActiveOfficers() {
+        $query = "SELECT * FROM " . $this->table_name . " 
+                  WHERE status='ACTIVE' 
+                  ORDER BY first_name ASC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function getOfficersOnDuty() {
+        $query = "SELECT so.*, s.shift_start, s.shift_end 
+                  FROM " . $this->table_name . " so
+                  JOIN schedules s ON so.id = s.officer_id
+                  WHERE s.schedule_date = CURDATE() 
+                  AND TIME(NOW()) BETWEEN s.shift_start AND s.shift_end
+                  AND so.status = 'ACTIVE'";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+}
+?&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="features-implemented">
+                        <h3>Core Functionalities</h3>
+                        <div class="feature-grid">
+                            <div class="feature-item">
+                                <i class="fas fa-user-check"></i>
+                                <h4>Officer Management</h4>
+                                <p>Complete CRUD operations for security personnel records</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <h4>Visitor Tracking</h4>
+                                <p>Real-time visitor check-in/check-out system</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <h4>Shift Scheduling</h4>
+                                <p>Automated scheduling with conflict detection</p>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-chart-pie"></i>
+                                <h4>Analytics Dashboard</h4>
+                                <p>Real-time statistics and reporting system</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="internal-security-demo.html" class="btn">View Live Demo</a>
+                        <a href="projects.html" class="btn btn-outline">Back to Projects</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="container">
+            <p>&copy; <span id="year"></span> Oyara Washington. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
